@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR‑генератор + UTM‑конструктор (высокое разрешение)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js">
+    </script>
+    <style>
+        /* Стили без изменений (сохранены из предыдущей версии) */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            background: #f7f9fc;
+            padding: 30px 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            max-width: 1300px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 30px 35px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        }
+        h1 {
+            font-size: 28px;
+            font-weight: 600;
+            color: #1a2634;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .subtitle {
+            color: #4a5a6e;
+            font-size: 15px;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+        .utm-generator {
+            background: #f2f5fa;
+            border-radius: 18px;
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            gap: 16px 20px;
+        }
+        .utm-generator .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1 0 160px;
+        }
+        .utm-generator label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #1a2634;
+        }
+        .utm-generator input,
+        .utm-generator select {
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1px solid #dce3ed;
+            background: white;
+            font-size: 14px;
+            transition: border 0.2s;
+            width: 100%;
+        }
+        .utm-generator input:focus,
+        .utm-generator select:focus {
+            outline: none;
+            border-color: #2f6ed4;
+            box-shadow: 0 0 0 3px rgba(47, 110, 212, 0.1);
+        }
+        .utm-generator .btn-utm {
+            padding: 10px 28px;
+            background: #1f8b4c;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            font-weight: 500;
+            font-size: 15px;
+            cursor: pointer;
+            transition: background 0.2s;
+            flex: 0 0 auto;
+            height: 44px;
+            align-self: flex-end;
+            white-space: nowrap;
+        }
+        .utm-generator .btn-utm:hover {
+            background: #16733e;
+        }
+        .utm-hint {
+            font-size: 13px;
+            color: #4a5a6e;
+            margin-top: 6px;
+            width: 100%;
+        }
+        .input-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+        textarea {
+            width: 100%;
+            min-height: 160px;
+            padding: 16px 18px;
+            font-size: 14px;
+            font-family: 'Cascadia Code', 'Fira Code', monospace;
+            border: 2px solid #dce3ed;
+            border-radius: 14px;
+            resize: vertical;
+            transition: border 0.2s;
+            background: #fafcff;
+            line-height: 1.6;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #2f6ed4;
+            background: #ffffff;
+            box-shadow: 0 0 0 4px rgba(47, 110, 212, 0.1);
+        }
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            align-items: center;
+        }
+        .btn {
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: 500;
+            border: none;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #2f6ed4;
+            color: white;
+            box-shadow: 0 4px 10px rgba(47, 110, 212, 0.25);
+        }
+        .btn:hover {
+            background: #1e5bbf;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(47, 110, 212, 0.3);
+        }
+        .btn:active {
+            transform: translateY(0);
+        }
+        .btn-secondary {
+            background: #e9edf4;
+            color: #1a2634;
+            box-shadow: none;
+        }
+        .btn-secondary:hover {
+            background: #d5dce6;
+            box-shadow: none;
+            transform: none;
+        }
+        .stats {
+            margin-left: auto;
+            color: #4a5a6e;
+            font-size: 14px;
+        }
+        .table-wrapper {
+            margin-top: 28px;
+            overflow-x: auto;
+            border-radius: 16px;
+            border: 1px solid #eef2f7;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            min-width: 600px;
+        }
+        thead {
+            background: #f2f5fa;
+        }
+        th {
+            text-align: left;
+            padding: 16px 18px;
+            font-weight: 600;
+            color: #1a2634;
+            border-bottom: 2px solid #dce3ed;
+        }
+        td {
+            padding: 16px 18px;
+            border-bottom: 1px solid #eef2f7;
+            vertical-align: middle;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        .qr-cell {
+            text-align: center;
+            min-width: 120px;
+        }
+        .qr-cell canvas {
+            display: block;
+            margin: 0 auto;
+            max-width: 120px;
+            height: auto;
+            border-radius: 8px;
+            background: white;
+        }
+        .link-cell {
+            word-break: break-all;
+            max-width: 400px;
+            color: #1a2634;
+            font-size: 13px;
+        }
+        .download-cell {
+            text-align: center;
+            min-width: 110px;
+        }
+        .download-btn {
+            padding: 8px 18px;
+            font-size: 13px;
+            font-weight: 500;
+            background: #2f6ed4;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+        .download-btn:hover {
+            background: #1e5bbf;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6f7e92;
+            font-size: 16px;
+        }
+        .empty-state span {
+            font-size: 48px;
+            display: block;
+            margin-bottom: 12px;
+        }
+        @media (max-width: 700px) {
+            .container {
+                padding: 20px 16px;
+            }
+            .utm-generator {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
+            }
+            .utm-generator .field-group {
+                flex: 1 1 auto;
+            }
+            .utm-generator .btn-utm {
+                align-self: stretch;
+                height: auto;
+                padding: 12px;
+            }
+            .actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .stats {
+                margin-left: 0;
+                text-align: center;
+            }
+            table {
+                font-size: 13px;
+                min-width: unset;
+            }
+            th,
+            td {
+                padding: 12px 10px;
+            }
+            .qr-cell canvas {
+                max-width: 80px;
+            }
+            .link-cell {
+                max-width: 200px;
+                font-size: 12px;
+            }
+            .download-btn {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+        }
+        @media (max-width: 480px) {
+            .qr-cell canvas {
+                max-width: 60px;
+            }
+            .link-cell {
+                max-width: 120px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><span>📊</span> QR‑генератор + UTM‑конструктор</h1>
+        <p class="subtitle">
+            Введите ссылки (каждая с новой строки). <strong>Только латиница</strong> – все русские символы автоматически транслитерируются.
+            QR‑коды скачиваются в <strong>высоком разрешении 2000×2000</strong> (2K). В таблице отображаются миниатюры 120×120.
+            Имя файла формируется из <code>utm_source</code> и <code>utm_campaign</code> (латиница). Если их нет – используется домен.
+        </p>
+
+        <!-- UTM-генератор -->
+        <div class="utm-generator">
+            <div class="field-group">
+                <label for="baseUrl">Базовый URL *</label>
+                <input type="url" id="baseUrl" placeholder="https://example.com" value="https://example.com">
+            </div>
+            <div class="field-group">
+                <label for="utmSource">Источник (utm_source) *</label>
+                <select id="utmSource">
+                    <option value="">Выберите...</option>
+                    <option value="pechatnaya_reklama">Печатная реклама</option>
+                    <option value="naruzhnaya_reklama">Наружная реклама</option>
+                    <option value="billboard">Билборд</option>
+                    <option value="transit">Транзитная реклама</option>
+                    <option value="radio">Радио</option>
+                    <option value="tv">Телевидение</option>
+                    <option value="event">Мероприятие</option>
+                    <option value="direct_mail">Прямая почта</option>
+                    <option value="flyer">Листовка</option>
+                    <option value="qr_code">QR-код</option>
+                    <option value="other">Другое</option>
+                </select>
+            </div>
+            <div class="field-group">
+                <label for="utmCampaign">Кампания (utm_campaign)</label>
+                <input type="text" id="utmCampaign" placeholder="spring_sale">
+            </div>
+            <div class="field-group">
+                <label for="utmMedium">Средство (utm_medium)</label>
+                <select id="utmMedium">
+                    <option value="offline">offline</option>
+                    <option value="cpc">cpc</option>
+                    <option value="email">email</option>
+                    <option value="social">social</option>
+                    <option value="display">display</option>
+                    <option value="qr">qr</option>
+                    <option value="other">other</option>
+                </select>
+            </div>
+            <div class="field-group" style="flex:0 0 160px;">
+                <label for="utmTerm">Термин (опционально)</label>
+                <input type="text" id="utmTerm" placeholder="keyword">
+            </div>
+            <button class="btn-utm" onclick="addUtmLink()">➕ Добавить UTM‑ссылку</button>
+            <div class="utm-hint" id="utmHint">Ссылка добавится в список ниже.</div>
+        </div>
+
+        <!-- Основной ввод -->
+        <div class="input-section">
+            <textarea id="urls" placeholder="https://example.com?utm_source=fb&amp;utm_campaign=summer"></textarea>
+            <div class="actions">
+                <button class="btn" onclick="generateQRs()">🚀 Сгенерировать</button>
+                <button class="btn btn-secondary" onclick="clearAll()">🗑 Очистить всё</button>
+                <span class="stats" id="stats">Кодов: 0</span>
+            </div>
+        </div>
+
+        <!-- Результаты -->
+        <div id="results">
+            <div class="empty-state">
+                <span>🧩</span>
+                Введите ссылки или сгенерируйте UTM и нажмите «Сгенерировать»
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            const resultsContainer = document.getElementById('results');
+            const statsEl = document.getElementById('stats');
+            const textarea = document.getElementById('urls');
+            const QR_SIZE = 2000; // Размер для скачивания (2K)
+
+            // Функция транслитерации (русские -> латиница)
+            function transliterate(text) {
+                const map = {
+                    'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'e',
+                    'ж': 'zh', 'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm',
+                    'н': 'n', 'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u',
+                    'ф': 'f', 'х': 'h', 'ц': 'ts', 'ч': 'ch', 'ш': 'sh', 'щ': 'sch', 'ъ': '',
+                    'ы': 'y', 'ь': '', 'э': 'e', 'ю': 'yu', 'я': 'ya',
+                    'А': 'A', 'Б': 'B', 'В': 'V', 'Г': 'G', 'Д': 'D', 'Е': 'E', 'Ё': 'E',
+                    'Ж': 'Zh', 'З': 'Z', 'И': 'I', 'Й': 'Y', 'К': 'K', 'Л': 'L', 'М': 'M',
+                    'Н': 'N', 'О': 'O', 'П': 'P', 'Р': 'R', 'С': 'S', 'Т': 'T', 'У': 'U',
+                    'Ф': 'F', 'Х': 'H', 'Ц': 'Ts', 'Ч': 'Ch', 'Ш': 'Sh', 'Щ': 'Sch', 'Ъ': '',
+                    'Ы': 'Y', 'Ь': '', 'Э': 'E', 'Ю': 'Yu', 'Я': 'Ya'
+                };
+                return text.split('').map(ch => map[ch] || ch).join('');
+            }
+
+            // Очистка строки от нелатинских символов (оставляем буквы, цифры, подчёркивание, дефис)
+            function sanitizeForUrl(str) {
+                let latin = transliterate(str);
+                latin = latin.replace(/[^a-zA-Z0-9_\-]/g, '');
+                return latin.toLowerCase();
+            }
+
+            // Извлечение имени файла из URL (только латиница)
+            function getFileLabel(url) {
+                try {
+                    const u = new URL(url);
+                    let source = u.searchParams.get('utm_source') || '';
+                    let campaign = u.searchParams.get('utm_campaign') || '';
+                    source = sanitizeForUrl(source);
+                    campaign = sanitizeForUrl(campaign);
+                    if (source && campaign) return source + '_' + campaign;
+                    if (source) return source;
+                    if (campaign) return campaign;
+                    let host = u.hostname.replace(/^www\./, '');
+                    return sanitizeForUrl(host);
+                } catch (_) {
+                    return 'qr_' + Math.random().toString(36).substr(2, 6);
+                }
+            }
+
+            // Генерация QR-кода в заданном размере и возврат canvas
+            function generateQRCanvas(text, size) {
+                const container = document.createElement('div');
+                container.style.display = 'none';
+                document.body.appendChild(container);
+                try {
+                    const qr = new QRCode(container, {
+                        text: text,
+                        width: size,
+                        height: size,
+                        colorDark: '#1a2634',
+                        colorLight: '#ffffff',
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+                    const canvas = container.querySelector('canvas');
+                    // Если canvas не найден (может быть img), то конвертируем
+                    if (!canvas) {
+                        const img = container.querySelector('img');
+                        if (img) {
+                            // Создаём canvas из изображения
+                            const c = document.createElement('canvas');
+                            c.width = size;
+                            c.height = size;
+                            const ctx = c.getContext('2d');
+                            ctx.drawImage(img, 0, 0, size, size);
+                            document.body.removeChild(container);
+                            return c;
+                        }
+                        throw new Error('Не удалось создать QR-код');
+                    }
+                    document.body.removeChild(container);
+                    return canvas;
+                } catch (e) {
+                    document.body.removeChild(container);
+                    throw e;
+                }
+            }
+
+            // Добавление UTM-ссылки (транслитерация)
+            window.addUtmLink = function() {
+                const base = document.getElementById('baseUrl').value.trim();
+                let source = document.getElementById('utmSource').value.trim();
+                let campaign = document.getElementById('utmCampaign').value.trim();
+                const medium = document.getElementById('utmMedium').value.trim();
+                let term = document.getElementById('utmTerm').value.trim();
+
+                if (!base) {
+                    document.getElementById('utmHint').textContent = '❌ Введите базовый URL';
+                    return;
+                }
+                if (!source) {
+                    document.getElementById('utmHint').textContent = '❌ Выберите источник (utm_source)';
+                    return;
+                }
+
+                source = sanitizeForUrl(source);
+                campaign = campaign ? sanitizeForUrl(campaign) : '';
+                term = term ? sanitizeForUrl(term) : '';
+
+                try {
+                    const url = new URL(base);
+                    url.searchParams.set('utm_source', source);
+                    if (campaign) url.searchParams.set('utm_campaign', campaign);
+                    if (medium) url.searchParams.set('utm_medium', medium);
+                    if (term) url.searchParams.set('utm_term', term);
+
+                    const fullUrl = url.toString();
+                    const current = textarea.value;
+                    if (current && !current.endsWith('\n')) {
+                        textarea.value = current + '\n' + fullUrl;
+                    } else {
+                        textarea.value = current + fullUrl;
+                    }
+                    document.getElementById('utmHint').textContent = '✅ Ссылка добавлена в список!';
+                } catch (e) {
+                    document.getElementById('utmHint').textContent = '❌ Неверный базовый URL: ' + e.message;
+                }
+            };
+
+            // Генерация QR-кодов и отображение таблицы
+            window.generateQRs = function() {
+                const rawLines = textarea.value.split(/\r?\n/);
+                const lines = rawLines.map(s => s.trim()).filter(s => s.length > 0);
+
+                if (lines.length === 0) {
+                    resultsContainer.innerHTML = `<div class="empty-state"><span>📭</span>Нет ссылок для генерации</div>`;
+                    statsEl.textContent = 'Кодов: 0';
+                    return;
+                }
+
+                const tableWrapper = document.createElement('div');
+                tableWrapper.className = 'table-wrapper';
+                const table = document.createElement('table');
+                const thead = document.createElement('thead');
+                thead.innerHTML = `
+                    <tr>
+                        <th>QR‑код</th>
+                        <th>Ссылка</th>
+                        <th>Скачать</th>
+                    </tr>
+                `;
+                table.appendChild(thead);
+                const tbody = document.createElement('tbody');
+                let count = 0;
+
+                lines.forEach((url, index) => {
+                    if (!url) return;
+
+                    const label = getFileLabel(url);
+
+                    const tr = document.createElement('tr');
+
+                    // QR (миниатюра 120x120)
+                    const tdQr = document.createElement('td');
+                    tdQr.className = 'qr-cell';
+                    const qrContainer = document.createElement('div');
+                    qrContainer.id = `qr-${index}-${Date.now()}`;
+                    tdQr.appendChild(qrContainer);
+
+                    // Ссылка
+                    const tdLink = document.createElement('td');
+                    tdLink.className = 'link-cell';
+                    tdLink.textContent = url;
+
+                    // Скачать
+                    const tdDownload = document.createElement('td');
+                    tdDownload.className = 'download-cell';
+                    const downloadBtn = document.createElement('button');
+                    downloadBtn.className = 'download-btn';
+                    downloadBtn.textContent = '⬇ Скачать';
+                    downloadBtn.dataset.url = url;
+                    downloadBtn.dataset.label = label;
+                    tdDownload.appendChild(downloadBtn);
+
+                    tr.appendChild(tdQr);
+                    tr.appendChild(tdLink);
+                    tr.appendChild(tdDownload);
+                    tbody.appendChild(tr);
+
+                    // Генерация миниатюры (120x120)
+                    try {
+                        new QRCode(qrContainer, {
+                            text: url,
+                            width: 120,
+                            height: 120,
+                            colorDark: '#1a2634',
+                            colorLight: '#ffffff',
+                            correctLevel: QRCode.CorrectLevel.H
+                        });
+                    } catch (e) {
+                        qrContainer.innerHTML = `<span style="color:red;">Ошибка</span>`;
+                        console.error('QR generation error:', e);
+                    }
+
+                    // Скачивание в высоком разрешении
+                    downloadBtn.addEventListener('click', function() {
+                        const url = this.dataset.url;
+                        const label = this.dataset.label || 'qr';
+                        // Блокируем кнопку, пока генерируется большой QR
+                        this.disabled = true;
+                        this.textContent = '⏳ Генерация...';
+                        try {
+                            // Генерируем большой QR
+                            const largeCanvas = generateQRCanvas(url, QR_SIZE);
+                            downloadQR(largeCanvas, label);
+                        } catch (e) {
+                            alert('Ошибка при создании QR-кода: ' + e.message);
+                            console.error(e);
+                        } finally {
+                            this.disabled = false;
+                            this.textContent = '⬇ Скачать';
+                        }
+                    });
+
+                    count++;
+                });
+
+                table.appendChild(tbody);
+                tableWrapper.appendChild(table);
+                resultsContainer.innerHTML = '';
+                resultsContainer.appendChild(tableWrapper);
+                statsEl.textContent = `Кодов: ${count}`;
+
+                if (count === 0) {
+                    resultsContainer.innerHTML = `<div class="empty-state"><span>⚠️</span>Не удалось создать QR-коды. Проверьте ввод.</div>`;
+                }
+            };
+
+            // Скачивание canvas как PNG
+            function downloadQR(canvas, filename) {
+                const safeName = filename.replace(/[^a-zA-Z0-9_\-]/g, '').trim() || 'qr';
+                const link = document.createElement('a');
+                link.download = `${safeName}.png`;
+                link.href = canvas.toDataURL('image/png');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+
+            window.clearAll = function() {
+                textarea.value = '';
+                resultsContainer.innerHTML = `<div class="empty-state"><span>🧩</span>Введите ссылки или сгенерируйте UTM и нажмите «Сгенерировать»</div>`;
+                statsEl.textContent = 'Кодов: 0';
+                document.getElementById('utmHint').textContent = 'Ссылка добавится в список ниже.';
+            };
+
+        })();
+    </script>
+</body>
+</html>
